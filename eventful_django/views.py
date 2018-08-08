@@ -8,6 +8,7 @@ from django.utils.datastructures import MultiValueDictKeyError
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import Event, Subscription
+import json
 
 
 @csrf_exempt
@@ -34,10 +35,11 @@ def subscribe(request):
     """
     if request.method == 'POST':
         try:
-            event = Event.objects.get(pk=request.POST['event_id'])
-            if request.POST['webhook'] == '':
-                return JsonResponse({}, status=400)
-            new_sub = Subscription(webhook=request.POST['webhook'], event_id=event.event_id)
+            e = json.loads(request.body)
+            event = Event.objects.get(pk=e['event_id'])
+            if e['webhook'] == '':
+                return JsonResponse({'error': 'wehbook is empty'}, status=400)
+            new_sub = Subscription(webhook=e['webhook'], event_id=event.event_id)
             new_sub.save()
             return JsonResponse({"event_id": new_sub.event.event_id, "webhook": new_sub.webhook})
         except Event.DoesNotExist as error:
